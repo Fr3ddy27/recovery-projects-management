@@ -1,0 +1,464 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Register | Recovery Project System</title>
+
+  <style>
+    :root{
+      --page-bg: #0e4ca3;
+      --card: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --muted2: #94a3b8;
+      --line: #e5e7eb;
+      --line-strong: #d1d5db;
+      --brand: #2563eb;
+      --brand-hover: #1d4ed8;
+      --danger-bg: #fef2f2;
+      --danger-line: #fecaca;
+      --danger-text: #991b1b;
+      --shadow: 0 16px 45px rgba(15, 23, 42, 0.22);
+      --radius: 18px;
+      --focus: rgba(37, 99, 235, 0.16);
+    }
+
+    *{
+      box-sizing: border-box;
+    }
+
+    body{
+      margin: 0;
+      min-height: 100vh;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.20), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(59,130,246,0.26), transparent 34%),
+        var(--page-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+    }
+
+    .register-shell{
+      width: 100%;
+      max-width: 410px;
+    }
+
+    .card{
+      background: rgba(255,255,255,0.97);
+      border: 1px solid rgba(255,255,255,0.65);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+    }
+
+    .card-top{
+      padding: 22px 26px 16px;
+      text-align: center;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .logo-wrap{
+      width: 58px;
+      height: 58px;
+      margin: 0 auto 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 16px;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      box-shadow: 0 8px 18px rgba(15,23,42,0.08);
+    }
+
+    .logo-wrap img{
+      width: 45px;
+      height: 45px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .title h1{
+      margin: 0;
+      font-size: 21px;
+      line-height: 1.2;
+      font-weight: 750;
+      letter-spacing: -0.03em;
+      color: var(--text);
+    }
+
+    .title p{
+      margin: 6px auto 0;
+      max-width: 300px;
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.45;
+    }
+
+    form{
+      padding: 20px 26px 24px;
+      background: var(--card);
+    }
+
+    .form-grid{
+      display: grid;
+      gap: 12px;
+    }
+
+    .field label{
+      display: block;
+      margin: 0 0 5px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #374151;
+    }
+
+    .input-wrap{
+      position: relative;
+    }
+
+    .input-icon{
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted2);
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-icon svg{
+      width: 16px;
+      height: 16px;
+    }
+
+    input{
+      width: 100%;
+      min-height: 40px;
+      padding: 9px 12px 9px 36px;
+      border-radius: 11px;
+      border: 1px solid var(--line);
+      background: #ffffff;
+      color: var(--text);
+      outline: none;
+      font-size: 13px;
+      font-family: inherit;
+      transition:
+        border-color 150ms ease,
+        box-shadow 150ms ease,
+        background-color 150ms ease;
+    }
+
+    input::placeholder{
+      color: #9ca3af;
+    }
+
+    input:hover{
+      border-color: var(--line-strong);
+      background: #fcfcfd;
+    }
+
+    input:focus{
+      border-color: rgba(37,99,235,0.55);
+      box-shadow: 0 0 0 3px var(--focus);
+      background: #ffffff;
+    }
+
+    .errorbox{
+      margin-top: 14px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--danger-line);
+      background: var(--danger-bg);
+      color: var(--danger-text);
+      font-size: 12px;
+      line-height: 1.45;
+      font-weight: 600;
+    }
+
+    .errorbox ul{
+      margin: 6px 0 0 16px;
+      padding: 0;
+    }
+
+    .errorbox li{
+      margin: 3px 0;
+    }
+
+    .actions{
+      margin-top: 18px;
+    }
+
+    .btn{
+      width: 100%;
+      min-height: 42px;
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 13.5px;
+      font-weight: 800;
+      font-family: inherit;
+      cursor: pointer;
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--brand), var(--brand-hover));
+      box-shadow: 0 10px 22px rgba(37,99,235,0.28);
+      transition:
+        transform 120ms ease,
+        box-shadow 120ms ease,
+        filter 120ms ease;
+    }
+
+    .btn:hover{
+      transform: translateY(-1px);
+      box-shadow: 0 13px 28px rgba(37,99,235,0.34);
+      filter: brightness(1.02);
+    }
+
+    .btn:active{
+      transform: translateY(0);
+      box-shadow: 0 8px 18px rgba(37,99,235,0.25);
+    }
+
+    .btn:focus{
+      outline: none;
+      box-shadow:
+        0 0 0 3px var(--focus),
+        0 13px 28px rgba(37,99,235,0.28);
+    }
+
+    .hint{
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      text-align: center;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .hint a{
+      color: var(--brand);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .hint a:hover{
+      color: var(--brand-hover);
+      text-decoration: underline;
+    }
+
+    .footer-text{
+      margin-top: 10px;
+      text-align: center;
+      font-size: 11.5px;
+      color: rgba(255,255,255,0.82);
+    }
+
+    @media (max-width: 520px){
+      body{
+        padding: 12px;
+      }
+
+      .register-shell{
+        max-width: 100%;
+      }
+
+      .card-top{
+        padding: 20px 20px 14px;
+      }
+
+      form{
+        padding: 18px 20px 22px;
+      }
+
+      .title h1{
+        font-size: 20px;
+      }
+
+      .logo-wrap{
+        width: 54px;
+        height: 54px;
+        border-radius: 15px;
+      }
+
+      .logo-wrap img{
+        width: 42px;
+        height: 42px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="register-shell">
+    <section class="card">
+
+      <div class="card-top">
+        <div class="logo-wrap">
+          <img src="{% static 'images/logo.png' %}" alt="Vanuatu Logo">
+        </div>
+
+        <div class="title">
+          <h1>Create Account</h1>
+          <p>Register a new user for the Recovery Project System.</p>
+        </div>
+      </div>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="form-grid">
+
+          <div class="field">
+            <label for="id_username">Username</label>
+            <div class="input-wrap">
+              <span class="input-icon">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M20 21a8 8 0 0 0-16 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </span>
+              <input
+                type="text"
+                name="username"
+                id="id_username"
+                value="{{ form.username.value|default:'' }}"
+                autocomplete="username"
+                placeholder="Choose a username"
+                required
+              >
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="id_email">Email address</label>
+            <div class="input-wrap">
+              <span class="input-icon">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M4 6h16v12H4V6Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                  <path d="m4 7 8 6 8-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <input
+                type="email"
+                name="email"
+                id="id_email"
+                value="{{ form.email.value|default:'' }}"
+                autocomplete="email"
+                placeholder="Enter email address"
+              >
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="id_password1">Password</label>
+            <div class="input-wrap">
+              <span class="input-icon">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M7 11V8a5 5 0 0 1 10 0v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M6 11h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </span>
+              <input
+                type="password"
+                name="password1"
+                id="id_password1"
+                autocomplete="new-password"
+                placeholder="Create a password"
+                required
+              >
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="id_password2">Confirm Password</label>
+            <div class="input-wrap">
+              <span class="input-icon">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M7 11V8a5 5 0 0 1 10 0v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M6 11h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="2"/>
+                  <path d="m9 16 2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <input
+                type="password"
+                name="password2"
+                id="id_password2"
+                autocomplete="new-password"
+                placeholder="Confirm your password"
+                required
+              >
+            </div>
+          </div>
+
+        </div>
+
+        {% if form.errors %}
+          <div class="errorbox">
+            <strong>Please fix the following:</strong>
+
+            {% if form.username.errors %}
+              <ul>
+                {% for error in form.username.errors %}
+                  <li>Username: {{ error }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+
+            {% if form.email.errors %}
+              <ul>
+                {% for error in form.email.errors %}
+                  <li>Email: {{ error }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+
+            {% if form.password1.errors %}
+              <ul>
+                {% for error in form.password1.errors %}
+                  <li>Password: {{ error }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+
+            {% if form.password2.errors %}
+              <ul>
+                {% for error in form.password2.errors %}
+                  <li>Confirm password: {{ error }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+
+            {% if form.non_field_errors %}
+              <ul>
+                {% for error in form.non_field_errors %}
+                  <li>{{ error }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+          </div>
+        {% endif %}
+
+        <div class="actions">
+          <button type="submit" class="btn">Create Account</button>
+        </div>
+
+        <div class="hint">
+          Already have an account?
+          <a href="{% url 'login' %}">Log in here</a>
+        </div>
+      </form>
+
+    </section>
+
+  </main>
+</body>
+</html>

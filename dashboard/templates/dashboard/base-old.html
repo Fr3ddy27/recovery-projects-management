@@ -1,0 +1,418 @@
+{% load static humanize %}{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Recovery Projects Dashboard</title>
+
+  <style>
+    /* Force the map to stay below modals */
+    .leaflet-pane,
+    .leaflet-top,
+    .leaflet-bottom { z-index: 10 !important; }
+
+    /* Ensure the modal overlay always stays above */
+    #projectModal { z-index: 10000 !important; }
+
+    /* --- Sidebar collapse helpers (toggled by JS via body class) --- */
+    .sidebar-collapsed #sidebar { width: 84px !important; }
+    .sidebar-collapsed #sidebarLogo { width: 44px !important; }
+
+    .sidebar-collapsed #sidebarTitle,
+    .sidebar-collapsed .nav-label,
+    .sidebar-collapsed #sidebarSearchWrap,
+    .sidebar-collapsed #sidebarDivider,
+    .sidebar-collapsed #uploadedReportsWrap {
+      display: none !important;
+    }
+
+    /* Center icons when collapsed */
+    .sidebar-collapsed .nav-link {
+      justify-content: center !important;
+      padding-left: 0.75rem !important;
+      padding-right: 0.75rem !important;
+    }
+    .sidebar-collapsed .nav-link img { margin-right: 0 !important; }
+
+    /* Optional: tighten sidebar padding when collapsed */
+    .sidebar-collapsed #sidebarInner { padding: 0.75rem !important; }
+  </style>
+
+  <!-- Tailwind via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: { brand: { blue: '#0e4ca3', light: '#3183ff' } } } }
+    }
+  </script>
+
+  <!-- Chart.js & Leaflet -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <link rel="stylesheet" href="{% static 'dashboard/styles.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+        integrity="sha512-Fo3rlrZj/kTcXn5b3Nz2eY2rFf7MZ4tJbXvVv77Q2yXQZ9qfQG0c7cHUXj4E6W6kE3qU9RQx6mDBzv5ZzYQzUg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"/>
+</head>
+
+<body class="bg-[#f6f7fb] text-[#0c1635]">
+  <!-- Dynamic grid so we can shrink the first column -->
+  <div id="appShell" class="min-h-screen grid transition-[grid-template-columns] duration-300 ease-in-out"
+       style="grid-template-columns: 260px 1fr;">
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="bg-white border-r border-slate-100 transition-[width] duration-300 ease-in-out overflow-hidden">
+      <div class="flex items-center justify-center gap-4 px-5 py-6 border-b border-slate-100">
+        <img id="sidebarLogo" src="{% static 'images/logo.png' %}" alt="Vanuatu Logo" class="w-20 h-auto"/>
+        <div id="sidebarTitle">
+          <div class="text-sm text-slate-500 leading-tight">RECOVERY PROJECTS</div>
+          <div class="text-2xl font-bold text-blue-700">DASHBOARD</div>
+        </div>
+      </div>
+
+      <div id="sidebarInner" class="p-4">
+        <!--<div id="sidebarSearchWrap">
+          <input class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm mb-4" placeholder="Search..." />
+        </div> -->
+
+        <nav class="space-y-2">
+          <a href="{% url 'location' %}"
+             class="nav-link flex items-center px-4 py-2 rounded-lg text-sm font-semibold
+             {% if request.path == '/location/' %}bg-brand-blue text-white{% else %}hover:bg-slate-100{% endif %}">
+            <img src="{% static 'images/map.png' %}" class="w-5 h-5 mr-2" alt="Location"/>
+            <span class="nav-label">MAP</span>
+          </a>
+
+
+          <a href="{% url 'overview' %}"
+             class="nav-link flex items-center px-4 py-2 rounded-lg text-sm font-semibold
+             {% if request.path == '/' %}bg-brand-blue text-white{% else %}hover:bg-slate-100{% endif %}">
+            <img src="{% static 'images/overview.png' %}" class="w-5 h-5 mr-2" alt="Overview"/>
+            <span class="nav-label">SUMMARY</span>
+          </a>
+
+          <a href="{% url 'projects' %}"
+             class="nav-link flex items-center px-4 py-2 rounded-lg text-sm font-semibold
+             {% if request.path == '/projects/' %}bg-brand-blue text-white{% else %}hover:bg-slate-100{% endif %}">
+            <img src="{% static 'images/projects.png' %}" class="w-5 h-5 mr-2" alt="Projects"/>
+            <span class="nav-label">PROJECTS</span>
+          </a>
+
+          <a href="{% url 'timeline' %}"
+             class="nav-link flex items-center px-4 py-2 rounded-lg text-sm font-semibold
+             {% if request.path == '/timeline/' %}bg-brand-blue text-white{% else %}hover:bg-slate-100{% endif %}">
+            <img src="{% static 'images/timeline.png' %}" class="w-5 h-5 mr-2" alt="Timeline"/>
+            <span class="nav-label">TIMELINE</span>
+          </a>
+        
+          <hr id="sidebarDivider" class="my-4 border-slate-300">
+          <a href="{% url 'reports' %}"
+             class="nav-link flex items-center px-4 py-2 rounded-lg text-sm font-semibold
+             {% if request.path == '/reports/' %}bg-brand-blue text-white{% else %}hover:bg-slate-100{% endif %}">
+            <img src="{% static 'images/reports.png' %}" class="w-5 h-5 mr-2" alt="Reports"/>
+            <span class="nav-label">6 MONTHLY REPORTS</span>
+          </a>
+
+          {% if user.is_authenticated %}
+            <hr id="sidebarDivider" class="my-4 border-slate-300">
+
+            <a href="{% url 'data-update' %}"
+               class="nav-link flex items-center px-4 py-2 rounded-lg text-sm font-semibold
+               {% if request.path == '/data-update/' %}bg-brand-blue text-white{% else %}hover:bg-slate-100{% endif %}">
+              <img src="{% static 'images/data-update.png' %}" class="w-5 h-5 mr-2" alt="Data Update Icon"/>
+              <span class="nav-label">DATA UPDATE</span>
+            </a>
+
+            <a href="{% url 'data-entry' %}"
+               class="nav-link flex items-center px-4 py-2 rounded-lg text-sm font-semibold
+               {% if request.path == '/data-entry/' %}bg-brand-blue text-white{% else %}hover:bg-slate-100{% endif %}">
+              <img src="{% static 'images/data-entry.png' %}" class="w-5 h-5 mr-2" alt="Data Entry Icon"/>
+              <span class="nav-label">DATA ENTRY</span>
+            </a>
+          {% endif %}
+            
+            <!-- {% if user.is_authenticated and user.is_superuser %}
+            <hr id="sidebarDivider" class="my-4 border-slate-300">
+              <a href="{% url 'approvals' %}"
+                class="nav-link flex items-center px-4 py-2 rounded-lg text-sm font-semibold
+                {% if request.path == '/approvals/' %}bg-brand-blue text-white{% else %}hover:bg-slate-100{% endif %}">
+                ✅ 
+                <span class="nav-label"> APPROVE EXPENDITURES</span>
+              </a>
+              <a href="{% url 'status_indicator_attachment_approvals' %}"
+                class="nav-link flex items-center px-4 py-2 rounded-lg text-sm font-semibold
+                {% if request.path == '/status_indicator_attachment_approvals/' %}bg-brand-blue text-white{% else %}hover:bg-slate-100{% endif %}">
+                ✅ 
+                <span class="nav-label"> APPROVE ATTACHMENTS</span>
+              </a>
+
+
+            {% endif %} -->
+
+            <!--{% if user.is_authenticated and not user.is_superuser %}
+              <a href="{% url 'rejected_expenditure_requests' %}"
+                class="nav-link flex items-center px-4 py-2 rounded-lg text-sm font-semibold
+                {% if request.path == '/approvals/expenditure/rejected/' %}bg-brand-blue text-white{% else %}hover:bg-slate-100{% endif %}">
+                ❌
+                <span class="nav-label">REJECTED DATA UPDATE</span>
+              </a>
+
+
+              <a href="{% url 'rejected_status_indicator_attachments' %}"
+                class="nav-link flex items-center px-4 py-2 rounded-lg text-sm font-semibold
+                {% if request.path == 'approvals/attachments/rejected/' %}bg-brand-blue text-white{% else %}hover:bg-slate-100{% endif %}">
+                ❌
+                <span class="nav-label">REJECTED ATTACHMENTS</span>
+              </a>
+            {% endif %} -->
+
+            
+            {% if user.is_authenticated and user.is_superuser %}
+            <hr id="sidebarDivider" class="my-4 border-slate-300">
+              <a href="{% url 'users_list' %}"
+                class="nav-link flex items-center px-4 py-2 rounded-lg text-sm font-semibold
+                {% if request.path == '/users-list/' %}bg-brand-blue text-white{% else %}hover:bg-slate-100{% endif %}">
+                <img src="{% static 'images/users.png' %}" class="w-5 h-5 mr-2" alt="Users"/>
+                <span class="nav-label">ALL USERS</span>
+              </a>
+            {% endif %}
+          
+        </nav>
+
+        <div id="uploadedReportsWrap">
+          {% block uploaded_reports %}{% endblock %}
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="flex flex-col">
+      <!-- TOP BAR (button moved here, far left) -->
+      <div class="h-[64px] flex items-center px-6 border-b border-slate-100 bg-white">
+        <!-- Far-left collapse button -->
+        <button id="sidebarToggle"
+                type="button"
+                class="-ml-2 mr-4 w-9 h-9 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center"
+                aria-label="Collapse sidebar"
+                title="Collapse sidebar">
+          <svg id="sidebarToggleIcon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-600"
+               fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <!-- default: left chevron -->
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+
+        <!-- Everything else pushed right -->
+<div class="ml-auto flex items-center gap-3">
+  {% if user.is_authenticated %}
+
+    <!-- NOTIFICATION BELL -->
+    <div class="relative">
+      <button id="notificationBell"
+              type="button"
+              class="relative w-10 h-10 rounded-full border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center shadow-sm"
+              aria-label="Notifications"
+              title="Notifications">
+        🔔
+
+        {% if notification_count > 0 %}
+          <span id="notificationCount"
+                class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center">
+            {{ notification_count }}
+          </span>
+        {% endif %}
+      </button>
+
+      <!-- Notification dropdown -->
+      <div id="notificationDropdown"
+          class="hidden absolute right-0 mt-2 w-80 rounded-xl bg-white border border-slate-200 shadow-xl z-[99999] overflow-hidden">
+
+        <div class="px-4 py-3 border-b border-slate-100">
+          <div class="text-sm font-bold text-slate-800">Notifications</div>
+
+          {% if notification_count > 0 %}
+            <div class="text-xs text-slate-500">
+              You have {{ notification_count }} notification{{ notification_count|pluralize }}
+            </div>
+          {% else %}
+            <div class="text-xs text-slate-500">
+              No new notifications
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="max-h-72 overflow-y-auto">
+
+          {% if notifications %}
+            {% for note in notifications %}
+              <a href="{% url note.url_name %}"
+                class="block px-4 py-3 hover:bg-slate-50 border-b border-slate-100">
+                <div class="flex items-start gap-3">
+                  <div class="text-lg">
+                    {{ note.icon }}
+                  </div>
+
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold text-slate-800">
+                      {{ note.title }}
+                    </div>
+                    <div class="text-xs text-slate-500 mt-1">
+                      {{ note.message }}
+                    </div>
+                  </div>
+
+                  <div class="min-w-[22px] h-[22px] rounded-full bg-red-100 text-red-700 text-xs font-bold flex items-center justify-center">
+                    {{ note.count }}
+                  </div>
+                </div>
+              </a>
+            {% endfor %}
+          {% else %}
+            <div class="px-4 py-8 text-center">
+              <div class="text-2xl mb-2">🔕</div>
+              <div class="text-sm font-semibold text-slate-700">
+                No notifications
+              </div>
+              <div class="text-xs text-slate-500 mt-1">
+                You are all caught up.
+              </div>
+            </div>
+          {% endif %}
+
+        </div>
+
+        {% if notification_count > 0 %}
+          <div class="px-4 py-2 bg-slate-50 text-xs text-slate-500 text-center">
+            Click a notification to open the related page
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- LOGGED IN USER -->
+    <div class="flex items-center gap-2 px-4 py-1 rounded-full bg-slate-100 border border-slate-200 text-sm font-semibold text-slate-700">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-blue-700"
+           fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+      </svg>
+
+      <span>
+        {{ user.username }}
+      </span>
+    </div>
+
+              <!-- LOG OUT -->
+              <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit"
+                  class="flex items-center gap-2 px-4 py-1 rounded-full bg-gradient-to-r from-[#5b5b5b] to-[#2f2f2f] text-sm text-white font-semibold shadow-md hover:brightness-110 transition-all">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4"
+                      fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M10 17l5-5-5-5v3H3v4h7v3zm9-12H11v4h2V7h6v10h-6v-2h-2v4h8V5z"/>
+                  </svg>
+                  LOG OUT
+                </button>
+              </form>
+
+            {% else %}
+
+            <!-- LOG IN -->
+            <a href="{% url 'login' %}" class="no-underline">
+              <button type="button"
+                class="flex items-center gap-2 px-4 py-1 rounded-full
+                       bg-gradient-to-r from-green-400 to-blue-700
+                       text-sm text-white font-semibold shadow-md
+                       hover:brightness-105 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4"
+                     fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+                LOG IN
+              </button>
+            </a>
+
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="p-5 md:p-6 lg:p-8">
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
+
+  <!-- Sidebar toggle script -->
+  <script>
+    (function () {
+      const appShell = document.getElementById('appShell');
+      const toggleBtn = document.getElementById('sidebarToggle');
+      const toggleIcon = document.getElementById('sidebarToggleIcon');
+
+      const STORAGE_KEY = 'sidebarCollapsed';
+
+      function setCollapsed(collapsed) {
+        document.body.classList.toggle('sidebar-collapsed', collapsed);
+
+        // Adjust grid first column
+        appShell.style.gridTemplateColumns = collapsed ? '84px 1fr' : '260px 1fr';
+
+        // Update button icon
+        if (collapsed) {
+          toggleBtn.setAttribute('aria-label', 'Expand sidebar');
+          toggleBtn.setAttribute('title', 'Expand sidebar');
+          // Right chevron
+          toggleIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />';
+        } else {
+          toggleBtn.setAttribute('aria-label', 'Collapse sidebar');
+          toggleBtn.setAttribute('title', 'Collapse sidebar');
+          // Left chevron
+          toggleIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />';
+        }
+
+        localStorage.setItem(STORAGE_KEY, collapsed ? '1' : '0');
+      }
+
+      // Init from localStorage
+      const saved = localStorage.getItem(STORAGE_KEY) === '1';
+      setCollapsed(saved);
+
+      toggleBtn.addEventListener('click', function () {
+        const isCollapsed = document.body.classList.contains('sidebar-collapsed');
+        setCollapsed(!isCollapsed);
+      });
+    })();
+  </script>
+
+
+
+<script>
+  (function () {
+    const bell = document.getElementById('notificationBell');
+    const dropdown = document.getElementById('notificationDropdown');
+
+    if (!bell || !dropdown) return;
+
+    bell.addEventListener('click', function (event) {
+      event.stopPropagation();
+      dropdown.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', function (event) {
+      if (!dropdown.contains(event.target) && !bell.contains(event.target)) {
+        dropdown.classList.add('hidden');
+      }
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        dropdown.classList.add('hidden');
+      }
+    });
+  })();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,164 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block content %}
+
+<div class="px-6 py-6 md:px-10">
+
+  <div class="mx-auto max-w-3xl rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+
+    <div class="mb-6 flex items-center justify-between gap-3">
+      <div>
+        <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          Edit User
+        </div>
+        <h1 class="mt-1 text-xl font-bold text-slate-800">
+          {{ selected_user.username }}
+        </h1>
+        <p class="mt-1 text-sm text-slate-500">
+          Update this user's account details and permissions.
+        </p>
+      </div>
+
+      <a
+        href="{% url 'users_list' %}"
+        class="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200 transition-colors">
+        Back
+      </a>
+    </div>
+
+    <form method="post" class="space-y-5">
+      {% csrf_token %}
+
+      {% if form.errors %}
+        <div class="rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-700 ring-1 ring-red-200">
+          Please fix the errors below.
+        </div>
+      {% endif %}
+
+      <div class="grid gap-4 md:grid-cols-2">
+
+        <div>
+          <label class="mb-1 block text-sm font-semibold text-slate-700">
+            Username
+          </label>
+          {{ form.username }}
+          {% if form.username.errors %}
+            <p class="mt-1 text-xs text-red-600">{{ form.username.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <div>
+          <label class="mb-1 block text-sm font-semibold text-slate-700">
+            Email
+          </label>
+          {{ form.email }}
+          {% if form.email.errors %}
+            <p class="mt-1 text-xs text-red-600">{{ form.email.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <div>
+          <label class="mb-1 block text-sm font-semibold text-slate-700">
+            First Name
+          </label>
+          {{ form.first_name }}
+          {% if form.first_name.errors %}
+            <p class="mt-1 text-xs text-red-600">{{ form.first_name.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <div>
+          <label class="mb-1 block text-sm font-semibold text-slate-700">
+            Last Name
+          </label>
+          {{ form.last_name }}
+          {% if form.last_name.errors %}
+            <p class="mt-1 text-xs text-red-600">{{ form.last_name.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+      </div>
+
+      <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div class="mb-3 text-sm font-bold text-slate-800">
+          Permissions
+        </div>
+
+        <div class="grid gap-3 md:grid-cols-3">
+
+          <label class="flex items-center gap-2 rounded-lg bg-white px-3 py-3 text-sm font-semibold text-slate-700 ring-1 ring-slate-200">
+            {{ form.is_staff }}
+            Staff
+          </label>
+
+          <label class="flex items-center gap-2 rounded-lg bg-white px-3 py-3 text-sm font-semibold text-slate-700 ring-1 ring-slate-200">
+            {{ form.is_superuser }}
+            Superuser
+          </label>
+
+          <label class="flex items-center gap-2 rounded-lg bg-white px-3 py-3 text-sm font-semibold text-slate-700 ring-1 ring-slate-200">
+            {{ form.is_active }}
+            Active
+          </label>
+
+        </div>
+
+        <p class="mt-3 text-xs text-slate-500">
+          Staff users can access the Django admin. Superusers have full permissions.
+        </p>
+      </div>
+
+      <div class="flex flex-col gap-3 border-t border-slate-200 pt-5 md:flex-row md:items-center md:justify-between">
+
+        <a
+          href="{% url 'change_user_password' selected_user.id %}"
+          class="inline-flex justify-center rounded-lg bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100 transition-colors">
+          Change Password
+        </a>
+
+        <div class="flex gap-3">
+          <a
+            href="{% url 'users_list' %}"
+            class="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200 transition-colors">
+            Cancel
+          </a>
+
+          <button
+            type="submit"
+            class="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors">
+            Save Changes
+          </button>
+        </div>
+
+      </div>
+    </form>
+
+  </div>
+
+</div>
+
+<style>
+  .form-input {
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid #d1d5db;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.875rem;
+    color: #334155;
+    outline: none;
+  }
+
+  .form-input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+  }
+
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #2563eb;
+  }
+</style>
+
+{% endblock %}

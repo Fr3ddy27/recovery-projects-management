@@ -1,0 +1,1138 @@
+{% load static %}
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Project Recovery</title>
+  <!-- Tabulator (CDN) -->
+  <link href="https://unpkg.com/tabulator-tables@6.2.5/dist/css/tabulator.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/tabulator-tables@6.2.5/dist/js/tabulator.min.js"></script>
+  <style>
+  :root{
+    --bg: #f6f7fb;
+    --card: #ffffff;
+    --text: #111827;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --line2:#eef2f7;
+    --brand:#2563eb;
+    --brand2:#1d4ed8;
+    --shadow: 0 10px 30px rgba(17,24,39,.08);
+    --radius: 16px;
+  }
+  body{
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    background: var(--bg);
+    padding: 18px;
+    color: var(--text);
+  }
+  .card{
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 16px 16px 10px;
+    border: 1px solid rgba(229,231,235,.8);
+  }
+  h2{
+    margin: 0;
+    font-size: 18px;
+    letter-spacing: .2px;
+  }
+  .hint{
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  #grid{
+    margin-top: 12px;
+  }
+
+  .tabulator{
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    background: #fff;
+  }
+  .tabulator .tabulator-header{
+    background: linear-gradient(#fbfcff, #f6f8fc);
+    border-bottom: 1px solid var(--line);
+    font-weight: 600;
+  }
+  .tabulator .tabulator-header .tabulator-col{
+    background: transparent;
+    border-right: 1px solid rgba(229,231,235,.8);
+    padding: 10px 8px;
+  }
+  .tabulator .tabulator-header .tabulator-col:last-child{
+    border-right: none;
+  }
+  .tabulator .tabulator-col-title{
+    color: #111827;
+    font-size: 12.5px;
+  }
+  .tabulator .tabulator-header{
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  .tabulator .tabulator-row{
+    background: #fff;
+    border-bottom: 1px solid var(--line2);
+    min-height: 44px;
+  }
+  .tabulator .tabulator-row:nth-child(even){
+    background: #fcfdff;
+  }
+  .tabulator .tabulator-row:hover{
+    background: #f3f6ff;
+  }
+  .tabulator .tabulator-cell{
+    padding: 10px 10px;
+    border-right: 1px solid rgba(229,231,235,.6);
+    font-size: 13px;
+    color: #111827;
+    vertical-align: middle;
+  }
+  .tabulator .tabulator-cell:last-child{ border-right: none; }
+  .tabulator .tabulator-cell.tabulator-editing{
+    padding: 6px 8px;
+    background: #ffffff;
+    box-shadow: inset 0 0 0 2px rgba(37,99,235,.25);
+    border-radius: 10px;
+  }
+  .tabulator input,
+  .tabulator select,
+  .tabulator textarea{
+    font-family: inherit;
+    font-size: 13px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 8px 10px;
+    outline: none;
+  }
+  .tabulator input:focus,
+  .tabulator textarea:focus{
+    border-color: rgba(37,99,235,.5);
+    box-shadow: 0 0 0 4px rgba(37,99,235,.12);
+  }
+  .tabulator .tabulator-header .tabulator-col .tabulator-header-filter{
+    margin-top: 8px;
+  }
+  .tabulator .tabulator-header .tabulator-col .tabulator-header-filter input{
+    width: 100%;
+    background: #fff;
+  }
+  .tabulator .tabulator-frozen{
+    box-shadow: 10px 0 18px rgba(17,24,39,.06);
+  }
+  .tabulator .tabulator-footer{
+    background: #fff;
+    border-top: 1px solid var(--line);
+    padding: 10px;
+  }
+  .tabulator .tabulator-page{
+    border: 1px solid var(--line);
+    background: #fff;
+    border-radius: 10px;
+    padding: 6px 10px;
+    margin: 0 4px;
+    font-size: 13px;
+    color: #111827;
+  }
+  .tabulator .tabulator-page.active{
+    background: rgba(37,99,235,.10);
+    border-color: rgba(37,99,235,.35);
+    color: var(--brand2);
+  }
+
+  .cell-wrap{
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .cell-value{
+    overflow:hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    flex: 1;
+  }
+  .edit-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width: 26px;
+    height: 26px;
+    border-radius: 10px;
+    border: 1px solid rgba(229,231,235,.9);
+    background: #fff;
+    cursor:pointer;
+    opacity: 0;
+    transform: translateY(1px);
+    transition: opacity .12s ease, transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    user-select:none;
+    color: #374151;
+  }
+  .tabulator-row:hover .edit-btn,
+  .tabulator-cell:hover .edit-btn{
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .edit-btn:hover{
+    border-color: rgba(37,99,235,.35);
+    box-shadow: 0 6px 18px rgba(37,99,235,.12);
+    color: var(--brand2);
+  }
+  .upload-btn{
+    font-size: 14px;
+  }
+  .file-link{
+    color: var(--brand2);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .file-link:hover{
+    text-decoration: underline;
+  }
+
+  .saving{
+    font-size:12px;
+    color: var(--muted);
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  .spinner{
+    width:12px;
+    height:12px;
+    border:2px solid rgba(17,24,39,.15);
+    border-top-color: rgba(37,99,235,.75);
+    border-radius:50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .saved-flash{
+    animation: flash .65s ease;
+  }
+  @keyframes flash{
+    0% { background: rgba(16, 185, 129, .18); }
+    100% { background: transparent; }
+  }
+  .tabulator .tabulator-loader{
+    background: rgba(255,255,255,.75);
+    backdrop-filter: blur(3px);
+  }
+  .tabulator .tabulator-loader-msg{
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+    padding: 12px 14px;
+    font-size: 13px;
+    color: #111827;
+  }
+
+body{
+  background:
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.25), transparent 35%),
+    radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.20), transparent 40%),
+    linear-gradient(135deg, #f8fafc 0%, #e0f2fe 45%, #dbeafe 100%);
+}
+
+  .toolbar{
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  #globalSearch{
+    flex: 1;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 13px;
+    outline: none;
+    background: #fff;
+  }
+  #globalSearch:focus{
+    border-color: rgba(37,99,235,.5);
+    box-shadow: 0 0 0 4px rgba(37,99,235,.12);
+  }
+  #clearSearch{
+    border: 1px solid var(--line);
+    background: #fff;
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  #clearSearch:hover{
+    border-color: rgba(37,99,235,.35);
+    box-shadow: 0 6px 18px rgba(37,99,235,.12);
+    color: var(--brand2);
+  }
+
+  .header{
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 8px;
+  }
+  .logo-wrap{
+    flex-shrink: 0;
+  }
+  .logo-wrap img{
+    height: 70px;
+    width: auto;
+    object-fit: contain;
+  }
+  .header-text{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .header-text h2{
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: .2px;
+    color: #111827;
+  }
+  .header-text .hint{
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .del-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width: 30px;
+    height: 30px;
+    border-radius: 12px;
+    border: 1px solid rgba(229,231,235,.9);
+    background: #fff;
+    cursor: pointer;
+    user-select: none;
+    color: #b91c1c;
+    opacity: 0;
+    transition: opacity .12s ease, transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    transform: translateY(1px);
+  }
+  .tabulator-row:hover .del-btn,
+  .tabulator-cell:hover .del-btn{
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .del-btn:hover{
+    border-color: rgba(185,28,28,.35);
+    box-shadow: 0 6px 18px rgba(185,28,28,.12);
+  }
+
+  .tabulator .tabulator-header .tabulator-col{
+    background:#a0c3e5;
+  }
+
+  .logout-form{
+    margin-left: auto;
+  }
+
+  .btn{
+    border: 1px solid var(--line);
+    background: #fff;
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text);
+    transition: box-shadow .12s ease, border-color .12s ease, transform .08s ease;
+    white-space: nowrap;
+  }
+  .btn:hover{
+    border-color: rgba(37,99,235,.35);
+    box-shadow: 0 6px 18px rgba(37,99,235,.12);
+    transform: translateY(-1px);
+    color: var(--brand2);
+  }
+  .btn:active{ transform: translateY(0); }
+  .btn.primary{
+    background: var(--brand);
+    border-color: var(--brand);
+    color: #fff;
+  }
+  .btn.primary:hover{
+    background: var(--brand2);
+    border-color: var(--brand2);
+    color: #fff;
+    box-shadow: 0 10px 26px rgba(37,99,235,.18);
+  }
+
+  .expand-btn{
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--muted);
+    padding: 0;
+  }
+  .tabulator-row:hover .expand-btn{
+    color: var(--brand);
+  }
+
+  .modal-backdrop{
+    position: fixed;
+    inset: 0;
+    background: rgba(17,24,39,.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 9999;
+    backdrop-filter: blur(3px);
+  }
+  .modal-backdrop.open{
+    display: flex;
+  }
+  .modal-card{
+    width: min(1200px, 96vw);
+    max-height: 90vh;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 24px 80px rgba(0,0,0,.28);
+    border: 1px solid var(--line);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .modal-header{
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(#fbfcff, #f6f8fc);
+  }
+  .modal-title{
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+  }
+  .modal-subtitle{
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .modal-close{
+    border: 1px solid var(--line);
+    background: #fff;
+    border-radius: 12px;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .modal-close:hover{
+    border-color: rgba(37,99,235,.35);
+    box-shadow: 0 6px 18px rgba(37,99,235,.12);
+    color: var(--brand2);
+  }
+  .modal-body{
+    padding: 16px 18px 18px;
+    overflow: auto;
+  }
+  .detail-grid{
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .detail-panel{
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .detail-panel h3{
+    margin: 0 0 8px 0;
+    font-size: 15px;
+  }
+  .child-grid{
+    min-height: 120px;
+    width: 100%;
+  }
+
+  @media (max-width: 1100px){
+    .detail-grid{
+      grid-template-columns: 1fr;
+    }
+    .modal-card{
+      width: min(96vw, 900px);
+    }
+  }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div class="logo-wrap">
+        <img src="{% static 'images/logo.png' %}" alt="Vanuatu Logo">
+      </div>
+      <div class="header-text">
+        <h2>Recovery Projects | Data Update</h2>
+        <div class="hint">Click the pencil to edit. Changes auto-save. Use ▶ to open child tables.</div>
+      </div>
+      <form method="post" action="{% url 'overview' %}" class="logout-form">
+        {% csrf_token %}
+        <button type="submit" class="btn">⬅️ Back to Dashboard</button>
+      </form>
+    </div>
+
+    <div class="toolbar">
+      <input id="globalSearch" type="search" placeholder="Search all columns…" />
+      <button id="clearSearch" type="button">Clear</button>
+    </div>
+
+    <div id="grid"></div>
+
+    <div class="modal-backdrop" id="childModal" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title" id="detailTitle">Child Tables</div>
+            <div class="modal-subtitle" id="detailSubtitle">Select a project using the ▶ button to view locations and indicators here.</div>
+          </div>
+          <button type="button" class="modal-close" id="closeDetailBtn" aria-label="Close">✕ Close</button>
+        </div>
+        <div class="modal-body" id="detailBody">
+          <div class="detail-placeholder">
+            No project selected yet.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  function getCookie(name) {
+    const v = `; ${document.cookie}`;
+    const parts = v.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(";").shift();
+  }
+  const csrftoken = getCookie("csrftoken");
+
+  function editableCellFormatter(cell){
+    const value = cell.getValue();
+    const safe = (value === null || value === undefined || value === "") ? "<span style='color:#889'>—</span>" : String(value);
+    return `
+      <div class="cell-wrap">
+        <div class="cell-value">${safe}</div>
+        <button type="button" class="edit-btn" title="Edit" aria-label="Edit">✎</button>
+      </div>
+    `;
+  }
+
+  function deleteButtonFormatter(){
+    return `<button type="button" class="del-btn" title="Delete row" aria-label="Delete row">🗑</button>`;
+  }
+
+  function expandButtonFormatter(){
+    return `<button type="button" class="expand-btn" title="Open child tables" aria-label="Open child tables">▶</button>`;
+  }
+
+  function attachmentFormatter(cell){
+    const row = cell.getRow().getData();
+    const url = row.attachment_url;
+    const name = row.attachment;
+    return `
+      <div class="cell-wrap">
+        <div class="cell-value">
+          ${url
+            ? `<a class="file-link" href="${url}" target="_blank" rel="noopener">${name || "View File"}</a>`
+            : `<span style="color:#889">No file</span>`}
+        </div>
+        <button type="button" class="edit-btn upload-btn" title="Upload file" aria-label="Upload file">📎</button>
+      </div>
+    `;
+  }
+
+  const childModal = document.getElementById("childModal");
+  const detailBody = document.getElementById("detailBody");
+  const detailTitle = document.getElementById("detailTitle");
+  const detailSubtitle = document.getElementById("detailSubtitle");
+  const closeDetailBtn = document.getElementById("closeDetailBtn");
+
+  let activeProjectId = null;
+  let activeParentRow = null;
+  let locTable = null;
+  let indTable = null;
+
+  function resetExpandButtons(){
+    table.getRows().forEach(r => {
+      const btn = r.getCell("_expand")?.getElement()?.querySelector(".expand-btn");
+      if(btn) btn.innerText = "▶";
+    });
+  }
+
+  function destroyChildTables(){
+    if(locTable){
+      locTable.destroy();
+      locTable = null;
+    }
+    if(indTable){
+      indTable.destroy();
+      indTable = null;
+    }
+  }
+
+  function openModal(){
+    childModal.classList.add("open");
+    childModal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeModal(){
+    childModal.classList.remove("open");
+    childModal.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+  }
+
+  function clearDetailPane(){
+    destroyChildTables();
+    activeProjectId = null;
+    activeParentRow = null;
+    resetExpandButtons();
+    detailTitle.textContent = "Child Tables";
+    detailSubtitle.textContent = "Select a project using the ▶ button to view locations and indicators here.";
+    detailBody.innerHTML = `
+      <div class="detail-placeholder">
+        No project selected yet.
+      </div>
+    `;
+    closeModal();
+  }
+
+  async function renderChildPane(row){
+    const data = row.getData();
+    const projectId = data.id;
+
+    if(activeProjectId === projectId){
+      clearDetailPane();
+      return;
+    }
+
+    destroyChildTables();
+    resetExpandButtons();
+
+    detailTitle.textContent = data.project_title ? `Child Tables for: ${data.project_title}` : `Child Tables for Project ${projectId}`;
+    detailSubtitle.textContent = `Project ID ${projectId} • Manage locations and status indicators here.`;
+    detailBody.innerHTML = `
+      <div class="detail-grid">
+        <div class="detail-panel">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px;">
+            <h3>Locations</h3>
+            <button type="button" class="btn add-child" data-type="loc">+ Add Location</button>
+          </div>
+          <div id="locations-grid-${projectId}" class="child-grid"></div>
+        </div>
+        <div class="detail-panel">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px;">
+            <h3>Status Indicators</h3>
+            <button type="button" class="btn add-child" data-type="ind">+ Add Indicator</button>
+          </div>
+          <div id="indicators-grid-${projectId}" class="child-grid"></div>
+        </div>
+      </div>
+    `;
+    openModal();
+
+    activeProjectId = projectId;
+    activeParentRow = row;
+
+    const expandBtnEl = row.getCell("_expand").getElement().querySelector(".expand-btn");
+    if (expandBtnEl) expandBtnEl.innerText = "▼";
+
+    let locData, indData;
+    try {
+      const [locRes, indRes] = await Promise.all([
+        fetch(`/api/project-locations/list/${projectId}/`),
+        fetch(`/api/project-status-indicators/list/${projectId}/`)
+      ]);
+
+      if(!locRes.ok || !indRes.ok){
+        throw new Error("Failed to load child data");
+      }
+
+      locData = await locRes.json();
+      indData = await indRes.json();
+    } catch (err) {
+      detailBody.innerHTML = `
+        <div class="detail-placeholder" style="color:#b91c1c;">
+          Failed to load child data.
+        </div>
+      `;
+      activeProjectId = null;
+      activeParentRow = null;
+      resetExpandButtons();
+      closeModal();
+      return;
+    }
+
+    locTable = new Tabulator(`#locations-grid-${projectId}`, {
+      maxHeight: "320px",
+      layout: "fitColumns",
+      data: locData.data,
+      placeholder: "No locations",
+      columns: [
+        {title:"⛔", field:"_delete", width:60, hozAlign:"center", headerSort:false, formatter: deleteButtonFormatter},
+        {title:"Province", field:"province", editor:"input", formatter: editableCellFormatter},
+        {title:"Island", field:"island", editor:"input", formatter: editableCellFormatter},
+        {title:"Area Council", field:"area_council", editor:"input", formatter: editableCellFormatter},
+        {title:"Project Site", field:"project_site", editor:"input", formatter: editableCellFormatter},
+        {title:"Longitude", field:"gps_longtitude", editor:"input", formatter: editableCellFormatter},
+        {title:"Latitude", field:"gps_latitude", editor:"input", formatter: editableCellFormatter},
+      ],
+    });
+
+    indTable = new Tabulator(`#indicators-grid-${projectId}`, {
+      maxHeight: "320px",
+      layout: "fitColumns",
+      data: indData.data,
+      placeholder: "No indicators",
+      columns: [
+        {title:"⛔", field:"_delete", width:60, hozAlign:"center", headerSort:false, formatter: deleteButtonFormatter},
+        {
+          title: "Achieved",
+          field: "status_indicator",
+          editor: "list",
+          editorParams: {
+            values: [
+              {label: "Achieved", value: 1},
+              {label: "Not Achieved", value: 0},
+            ],
+            clearable: false,
+          },
+          mutatorEdit: function(value){
+            return Number(value);
+          },
+          formatter: function(cell){
+            const value = Number(cell.getValue());
+            if (value === 1) return "Achieved";
+            if (value === 0) return "Not Achieved";
+            return "<span style='color:#889'>—</span>";
+          }
+        },
+        {title:"Status Indicator", field:"description", editor:"input", formatter: editableCellFormatter, widthGrow:2},
+        {title:"Attachment", field:"attachment", formatter: attachmentFormatter, widthGrow:2},
+      ],
+    });
+
+    addChildTableListeners(locTable, "/api/project-locations/");
+    addChildTableListeners(indTable, "/api/project-status-indicators/");
+
+    const addBtns = detailBody.querySelectorAll(".add-child");
+    addBtns.forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const type = btn.dataset.type;
+        const api = type === "loc"
+          ? "/api/project-locations/create/"
+          : "/api/project-status-indicators/create/";
+        const subTable = type === "loc" ? locTable : indTable;
+
+        try {
+          const res = await fetch(`${api}${projectId}/`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": csrftoken,
+            },
+            body: JSON.stringify({}),
+          });
+
+          if (!res.ok) throw new Error("Create failed");
+
+          const newData = await res.json();
+          subTable.addRow(newData);
+        } catch (err) {
+          alert("Failed to add new row.");
+        }
+      });
+    });
+  }
+
+
+  function dateEditor(cell, onRendered, success, cancel) {
+    const input = document.createElement("input");
+
+    input.type = "date";
+    input.style.width = "100%";
+    input.style.boxSizing = "border-box";
+    input.style.border = "1px solid #e5e7eb";
+    input.style.borderRadius = "10px";
+    input.style.padding = "8px 10px";
+    input.style.fontSize = "13px";
+
+    let value = cell.getValue();
+
+    if (value) {
+      input.value = String(value).slice(0, 10);
+    }
+
+    onRendered(function () {
+      input.focus();
+
+      if (input.showPicker) {
+        input.showPicker();
+      }
+    });
+
+    input.addEventListener("change", function () {
+      success(input.value);
+    });
+
+    input.addEventListener("blur", function () {
+      success(input.value);
+    });
+
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        success(input.value);
+      }
+
+      if (e.key === "Escape") {
+        cancel();
+      }
+    });
+
+    return input;
+  }
+
+  const table = new Tabulator("#grid", {
+    height: "70vh",
+    layout: "fitDataStretch",
+    placeholder: "No projects found",
+    ajaxLoader: true,
+    ajaxLoaderLoading: "Loading projects…",
+    ajaxLoaderError: "Could not load data.",
+    pagination: true,
+    paginationMode: "remote",
+    paginationSize: 50,
+    paginationSizeSelector: [25, 50, 100, 200],
+    ajaxURL: "{% url 'recovery_projects_api_list' %}",
+    ajaxConfig: "GET",
+    ajaxResponse: function(url, params, response){
+      return response;
+    },
+    movableColumns: true,
+    headerFilterLiveFilterDelay: 300,
+    editTriggerEvent: "none",
+    columns: [
+      {title:"", field:"_expand", width:40, hozAlign:"center", headerSort:false, formatter: expandButtonFormatter, frozen:true},
+      //{title:"ID", field:"id", width:80, frozen:true},
+        //{title:"ID", field:"id", width:80, frozen:true},
+  {title:"⛔", field:"_delete", width:60, hozAlign:"center", headerSort:false, formatter: deleteButtonFormatter, frozen:true},
+  {title:"Sector", field:"sector", editor:"input", headerFilter:"input", headerFilterPlaceholder:"Search sector...", formatter: editableCellFormatter},
+  {title:"Program", field:"program", editor:"input", headerFilter:"input", headerFilterPlaceholder:"Search program...", formatter: editableCellFormatter},
+  {title:"Project Title", field:"project_title", editor:"input", headerFilter:"input", headerFilterPlaceholder:"Search project title...", width:280, formatter: editableCellFormatter},
+  {title:"Description", field:"project_description", editor:"input", headerFilter:"input", headerFilterPlaceholder:"Search description...", width:320, formatter: editableCellFormatter},
+  {title:"Funding Status", field:"funding_status", editor:"input", headerFilter:"input", headerFilterPlaceholder:"Search funding status...", formatter: editableCellFormatter},
+  {title:"Funding Agency", field:"funding_agency", editor:"input", headerFilter:"input", headerFilterPlaceholder:"Search funding agency...", width:220, formatter: editableCellFormatter},
+  {title:"Implementing Agency", field:"implementing_agency", editor:"input", headerFilter:"input", headerFilterPlaceholder:"Search implementing agency...", width:220, formatter: editableCellFormatter},
+  {title:"GIP", field:"gip", editor:"input", headerFilter:"input", headerFilterPlaceholder:"Search GIP...", formatter: editableCellFormatter},
+  {title:"Tender Board Link", field:"central_tender_board_link", editor:"input", headerFilter:"input", headerFilterPlaceholder:"Search tender board link...", width:260, formatter: editableCellFormatter},
+  {title:"Funding (USD)", field:"project_total_funding_us", editor:"input", headerFilter:"input", headerFilterPlaceholder:"Search funding USD...", formatter: editableCellFormatter},
+  {title:"Funding (Vatu)", field:"project_total_funding_vt", editor:"input", headerFilter:"input", headerFilterPlaceholder:"Search funding Vatu...", formatter: editableCellFormatter},
+  {title:"Expenditure", field:"project_expenditure", editor:"input", headerFilter:"input", headerFilterPlaceholder:"Search expenditure...", formatter: editableCellFormatter},
+  
+  {
+    title: "Start Date",
+    field: "start_date",
+    editor: dateEditor,
+    headerFilter: "input",
+    headerFilterPlaceholder: "Search start date...",
+    formatter: editableCellFormatter
+  },
+  {
+    title: "Completion Date",
+    field: "completion_date",
+    editor: dateEditor,
+    headerFilter: "input",
+    headerFilterPlaceholder: "Search completion date...",
+    formatter: editableCellFormatter
+  },
+
+  {title:"Disaster Type", field:"type_of_disaster_operation", editor:"input", headerFilter:"input", headerFilterPlaceholder:"Search disaster type...", width:220, formatter: editableCellFormatter},
+  {title:"Key Risks", field:"key_risks_to_implementation", editor:"input", headerFilter:"input", headerFilterPlaceholder:"Search key risks...", width:260, formatter: editableCellFormatter},
+  ],
+  });
+
+  table.on("dataLoaded", function(){
+    if(activeProjectId){
+      const matchingRow = table.getRows().find(r => r.getData().id === activeProjectId);
+      if(matchingRow){
+        resetExpandButtons();
+        const btn = matchingRow.getCell("_expand")?.getElement()?.querySelector(".expand-btn");
+        if(btn) btn.innerText = "▼";
+        activeParentRow = matchingRow;
+      } else {
+        clearDetailPane();
+      }
+    }
+  });
+
+  table.on("cellClick", async function(e, cell){
+    const editBtn = e.target.closest(".edit-btn");
+    if(editBtn){
+      cell.edit();
+      return;
+    }
+
+    const delBtn = e.target.closest(".del-btn");
+    if(delBtn){
+      const row = cell.getRow();
+      const data = row.getData();
+      const label = data.project_title ? `“${data.project_title}”` : `ID ${data.id}`;
+      if(!confirm(`Delete ${label}? This cannot be undone.`)) return;
+      try{
+        const res = await fetch(`/api/recovery-projects/${data.id}/`, {
+          method: "DELETE",
+          headers: {
+            "X-CSRFToken": csrftoken,
+          },
+        });
+        if(!res.ok){
+          const msg = await res.text();
+          alert("Delete failed: " + msg);
+          return;
+        }
+        row.delete();
+        if(activeProjectId === data.id){
+          clearDetailPane();
+        }
+      }catch(err){
+        alert("Delete failed (network error).");
+      }
+      return;
+    }
+
+    const expandBtn = e.target.closest(".expand-btn");
+    if(expandBtn){
+      renderChildPane(cell.getRow());
+    }
+  });
+
+  table.on("cellEdited", async function(cell){
+    const row = cell.getRow().getData();
+    const field = cell.getField();
+    const value = cell.getValue();
+
+    const cellEl = cell.getElement();
+    const valueEl = cellEl.querySelector(".cell-value");
+    const oldHTML = valueEl ? valueEl.innerHTML : null;
+    if(valueEl){
+      valueEl.innerHTML = `<span class="saving"><span class="spinner"></span>Saving…</span>`;
+    }
+
+    try{
+      const res = await fetch(`/api/recovery-projects/${row.id}/`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrftoken,
+        },
+        body: JSON.stringify({field, value}),
+      });
+      if(!res.ok){
+        const msg = await res.text();
+        cell.restoreOldValue();
+        alert("Save failed: " + msg);
+        return;
+      }
+      const data = await res.json();
+      cell.setValue(data.value, true);
+      cellEl.classList.add("saved-flash");
+      setTimeout(()=>cellEl.classList.remove("saved-flash"), 650);
+    }catch(err){
+      cell.restoreOldValue();
+      alert("Save failed (network error).");
+    }finally{
+      if(valueEl && oldHTML !== null && valueEl.innerHTML.includes("Saving")){
+        valueEl.innerHTML = oldHTML;
+      }
+    }
+  });
+
+  function addChildTableListeners(subTable, apiPrefix) {
+    subTable.on("cellClick", async (e, cell) => {
+      const uploadBtn = e.target.closest(".upload-btn");
+      const editBtn = e.target.closest(".edit-btn");
+      const delBtn = e.target.closest(".del-btn");
+
+if (uploadBtn) {
+  const row = cell.getRow();
+  const data = row.getData();
+
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg";
+
+  input.onchange = async () => {
+    if (!input.files || !input.files[0]) return;
+
+    const formData = new FormData();
+    formData.append("attachment", input.files[0]);
+
+    const cellEl = cell.getElement();
+    const valueEl = cellEl.querySelector(".cell-value");
+    const oldHTML = valueEl ? valueEl.innerHTML : null;
+    if (valueEl) {
+      valueEl.innerHTML = `<span class="saving"><span class="spinner"></span>Uploading…</span>`;
+    }
+
+    try {
+      const res = await fetch(`${apiPrefix}${data.id}/`, {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": csrftoken,
+        },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const msg = await res.text();
+        throw new Error(msg || "Upload failed");
+      }
+
+      const result = await res.json();
+      row.update({
+        attachment: result.attachment || result.value || "",
+        attachment_url: result.attachment_url || "",
+      });
+
+      cellEl.classList.add("saved-flash");
+      setTimeout(() => cellEl.classList.remove("saved-flash"), 650);
+    } catch (err) {
+      alert("File upload failed.");
+      if (valueEl && oldHTML !== null) {
+        valueEl.innerHTML = oldHTML;
+      }
+    }
+  };
+
+  input.click();
+  return;
+}
+
+      if (editBtn) {
+        cell.edit();
+        return;
+      }
+
+      if (delBtn) {
+        const row = cell.getRow();
+        const data = row.getData();
+        if (!confirm("Delete this row? This cannot be undone.")) return;
+        try {
+          const res = await fetch(`${apiPrefix}${data.id}/`, {
+            method: "DELETE",
+            headers: { "X-CSRFToken": csrftoken },
+          });
+          if (!res.ok) throw new Error("Delete failed");
+          row.delete();
+        } catch (err) {
+          alert("Delete failed.");
+        }
+      }
+    });
+
+    subTable.on("cellEdited", async (cell) => {
+      if (cell.getField() === "attachment") return;
+
+      const rowData = cell.getRow().getData();
+      const field = cell.getField();
+      const value = cell.getValue();
+      const cellEl = cell.getElement();
+      const valueEl = cellEl.querySelector(".cell-value");
+      const oldHTML = valueEl ? valueEl.innerHTML : null;
+
+      if (valueEl) valueEl.innerHTML = `<span class="saving"><span class="spinner"></span>Saving…</span>`;
+
+      try {
+        const res = await fetch(`${apiPrefix}${rowData.id}/`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", "X-CSRFToken": csrftoken },
+          body: JSON.stringify({ field, value }),
+        });
+        if (!res.ok) throw new Error("Save failed");
+
+        const data = await res.json();
+        rowData[field] = data.value;
+        cell.getRow().update({ [field]: data.value });
+
+        cellEl.classList.add("saved-flash");
+        setTimeout(() => cellEl.classList.remove("saved-flash"), 650);
+      } catch (err) {
+        cell.restoreOldValue();
+        alert("Save failed.");
+      } finally {
+        if (valueEl && oldHTML && valueEl.innerHTML.includes("Saving")) valueEl.innerHTML = oldHTML;
+      }
+    });
+  }
+
+  closeDetailBtn.addEventListener("click", clearDetailPane);
+
+  childModal.addEventListener("click", (e) => {
+    if(e.target === childModal){
+      clearDetailPane();
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if(e.key === "Escape" && childModal.classList.contains("open")){
+      clearDetailPane();
+    }
+  });
+</script>
+
+<script>
+  const globalSearchEl = document.getElementById("globalSearch");
+  const clearSearchEl = document.getElementById("clearSearch");
+
+  function globalFilter(data, filterParams){
+    const q = (filterParams.value || "").toString().toLowerCase().trim();
+    if(!q) return true;
+    const fields = table.getColumns()
+      .map(c => c.getField())
+      .filter(Boolean);
+    return fields.some(f => {
+      const v = data[f];
+      if(v === null || v === undefined) return false;
+      return String(v).toLowerCase().includes(q);
+    });
+  }
+
+  function applyGlobalSearch(value){
+    const q = (value || "").trim();
+    if(!q){
+      table.clearFilter(true);
+      return;
+    }
+    table.setFilter(globalFilter, { value: q });
+  }
+
+  globalSearchEl.addEventListener("input", (e) => {
+    applyGlobalSearch(e.target.value);
+  });
+
+  clearSearchEl.addEventListener("click", () => {
+    globalSearchEl.value = "";
+    applyGlobalSearch("");
+    globalSearchEl.focus();
+  });
+</script>
+</body>
+</html>

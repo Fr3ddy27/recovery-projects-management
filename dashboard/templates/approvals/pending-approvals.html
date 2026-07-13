@@ -1,0 +1,158 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+
+<div class="px-4 py-4 md:px-6">
+
+  <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+    <div class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+      Project expenditure pending approval
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-xs text-slate-700">
+        <thead>
+          <tr class="bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <th class="px-3 py-3 text-left">Project Title</th>
+            <th class="px-3 py-3 text-left">GIP</th>
+            <th class="px-3 py-3 text-left">Funding</th>
+            <th class="px-3 py-3 text-left">Current Approved Expenditure</th>
+            <th class="px-3 py-3 text-left">Requested Expenditure</th>
+            <th class="px-3 py-3 text-left">Requested By</th>
+            <th class="px-3 py-3 text-left">Date Requested</th>
+            <th class="px-3 py-3 text-center">Action</th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-slate-200">
+          {% for item in expenditure_requests %}
+            <tr class="hover:bg-slate-50 transition-colors">
+
+              <td class="px-3 py-3 font-medium max-w-xs truncate">
+                {{ item.project.project_title|default:"-" }}
+              </td>
+
+              <td class="px-3 py-3 whitespace-nowrap">
+                {{ item.project.gip|default:"-" }}
+              </td>
+
+              <td class="px-3 py-3 whitespace-nowrap">
+                {% if item.project.project_total_funding_vt %}
+                  {{ item.project.project_total_funding_vt|floatformat:0|intcomma }}vt
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+
+              <td class="px-3 py-3 whitespace-nowrap text-slate-500">
+                {% if item.request.old_expenditure %}
+                  {{ item.request.old_expenditure|floatformat:0|intcomma }}vt
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+
+              <td class="px-3 py-3 whitespace-nowrap font-semibold text-blue-700">
+                {% if item.request.new_expenditure %}
+                  {{ item.request.new_expenditure|floatformat:0|intcomma }}vt
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+
+              <td class="px-3 py-3 whitespace-nowrap">
+                {% if item.requested_by %}
+                  {{ item.requested_by.username }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+
+              <td class="px-3 py-3 whitespace-nowrap">
+                {% if item.request.created_at %}
+                  {{ item.request.created_at|date:"d M Y, h:i A" }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+
+              <td class="px-3 py-3">
+                <div class="flex items-center justify-center gap-2">
+
+                  <form
+                    method="post"
+                    action="{% url 'approve_expenditure_request' item.request.id %}"
+                    onsubmit="return confirmApprove();">
+                    {% csrf_token %}
+
+                    <button
+                      type="submit"
+                      class="rounded-md bg-green-600 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-green-700 transition-colors">
+                      Approve
+                    </button>
+                  </form>
+
+                  <form
+                    method="post"
+                    action="{% url 'reject_expenditure_request' item.request.id %}"
+                    onsubmit="return askDisapprovalReason(this);">
+                    {% csrf_token %}
+
+                    <input
+                      type="hidden"
+                      name="admin_comment"
+                      class="disapproved-comment-input">
+
+                    <button
+                      type="submit"
+                      class="rounded-md bg-red-600 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-red-700 transition-colors">
+                      Reject
+                    </button>
+                  </form>
+
+                </div>
+              </td>
+
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="8" class="px-3 py-8 text-center text-slate-500">
+                No pending expenditure approvals found.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  function confirmApprove() {
+    return confirm("Are you sure you want to approve this expenditure update?");
+  }
+
+  function askDisapprovalReason(form) {
+    const reason = prompt("Please enter the reason for rejecting this expenditure update:");
+
+    if (reason === null) {
+      return false;
+    }
+
+    const trimmedReason = reason.trim();
+
+    if (!trimmedReason) {
+      alert("Rejection reason is required.");
+      return false;
+    }
+
+    form.querySelector(".disapproved-comment-input").value = trimmedReason;
+    return true;
+  }
+</script>
+
+{% endblock %}

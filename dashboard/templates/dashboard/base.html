@@ -1,0 +1,1070 @@
+{% load static humanize %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>
+    {% block title %}Recovery Projects Dashboard{% endblock %}
+  </title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: "#eff6ff",
+              100: "#dbeafe",
+              200: "#bfdbfe",
+              500: "#3183ff",
+              600: "#1769e0",
+              700: "#0e4ca3",
+              800: "#103f82",
+              900: "#12376b"
+            }
+          },
+          boxShadow: {
+            soft: "0 10px 30px rgba(15, 23, 42, 0.06)",
+            panel: "0 18px 45px rgba(15, 23, 42, 0.08)",
+            dropdown: "0 24px 60px rgba(15, 23, 42, 0.16)"
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Leaflet -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    crossorigin=""
+  >
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    crossorigin="">
+  </script>
+
+  <!-- Font Awesome -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  >
+
+  <link rel="stylesheet" href="{% static 'dashboard/styles.css' %}">
+
+  <style>
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(
+          circle at top right,
+          rgba(49, 131, 255, 0.08),
+          transparent 32rem
+        ),
+        #f5f7fb;
+    }
+
+    /* Keep Leaflet beneath dropdowns and modals */
+    .leaflet-pane,
+    .leaflet-top,
+    .leaflet-bottom {
+      z-index: 10 !important;
+    }
+
+    #projectModal {
+      z-index: 10000 !important;
+    }
+
+    /* Modern scrollbar */
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 transparent;
+    }
+
+    *::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+
+    *::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    *::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 999px;
+    }
+
+    *::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Desktop sidebar */
+    #sidebar {
+      width: 260px;
+    }
+
+    .sidebar-collapsed #sidebar {
+      width: 88px !important;
+    }
+
+    .sidebar-collapsed #sidebarLogo {
+      width: 42px !important;
+    }
+
+    .sidebar-collapsed #sidebarTitle,
+    .sidebar-collapsed .nav-label,
+    .sidebar-collapsed .sidebar-section-title,
+    .sidebar-collapsed #uploadedReportsWrap {
+      display: none !important;
+    }
+
+    .sidebar-collapsed .nav-link {
+      justify-content: center !important;
+      padding-left: 0.75rem !important;
+      padding-right: 0.75rem !important;
+    }
+
+    .sidebar-collapsed .nav-icon {
+      margin-right: 0 !important;
+    }
+
+    .sidebar-collapsed #sidebarInner {
+      padding-left: 0.75rem !important;
+      padding-right: 0.75rem !important;
+    }
+
+    .sidebar-collapsed .sidebar-header {
+      padding-left: 0.75rem !important;
+      padding-right: 0.75rem !important;
+    }
+
+    /* Navigation */
+    .nav-link {
+      position: relative;
+      min-height: 44px;
+      transition:
+        background-color 160ms ease,
+        color 160ms ease,
+        transform 160ms ease,
+        box-shadow 160ms ease;
+    }
+
+    .nav-link:hover {
+      transform: translateX(2px);
+    }
+
+    .nav-link-active {
+      color: white !important;
+      background:
+        linear-gradient(
+          135deg,
+          #0e4ca3 0%,
+          #1769e0 55%,
+          #3183ff 100%
+        ) !important;
+      box-shadow: 0 10px 22px rgba(14, 76, 163, 0.2);
+    }
+
+    .nav-link-active::before {
+      content: "";
+      position: absolute;
+      left: -12px;
+      top: 50%;
+      width: 4px;
+      height: 24px;
+      border-radius: 999px;
+      background: #3183ff;
+      transform: translateY(-50%);
+    }
+
+    .nav-link-active img {
+      filter: brightness(-1) invert(1);
+    }
+
+    /* Mobile sidebar */
+    #mobileOverlay {
+      display: none;
+    }
+
+    @media (max-width: 1023px) {
+      #appShell {
+        display: block !important;
+      }
+
+      #sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: 280px !important;
+        z-index: 100000;
+        transform: translateX(-100%);
+        transition: transform 250ms ease;
+        border-radius: 0 24px 24px 0;
+      }
+
+      body.mobile-sidebar-open #sidebar {
+        transform: translateX(0);
+      }
+
+      body.mobile-sidebar-open #mobileOverlay {
+        display: block;
+      }
+
+      .sidebar-collapsed #sidebar {
+        width: 280px !important;
+      }
+
+      .sidebar-collapsed #sidebarTitle,
+      .sidebar-collapsed .nav-label,
+      .sidebar-collapsed .sidebar-section-title,
+      .sidebar-collapsed #uploadedReportsWrap {
+        display: block !important;
+      }
+
+      .sidebar-collapsed .nav-link {
+        justify-content: flex-start !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+      }
+
+      .sidebar-collapsed .nav-icon {
+        margin-right: 0.75rem !important;
+      }
+    }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body class="text-slate-800 antialiased">
+
+  <!-- Mobile overlay -->
+  <div
+    id="mobileOverlay"
+    class="fixed inset-0 z-[99990] bg-slate-950/45 backdrop-blur-sm lg:hidden">
+  </div>
+
+  <div
+    id="appShell"
+    class="min-h-screen grid transition-[grid-template-columns] duration-300 ease-in-out"
+    style="grid-template-columns: 260px minmax(0, 1fr);">
+
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+    <aside
+      id="sidebar"
+      class="relative flex h-screen flex-col overflow-hidden border-r border-slate-200/70 bg-white/95 shadow-soft backdrop-blur-xl transition-[width,transform] duration-300 ease-in-out lg:sticky lg:top-0">
+
+      <!-- Sidebar header -->
+      <div
+        class="sidebar-header flex min-h-[86px] items-center gap-3 border-b border-slate-100 px-5 py-4">
+
+        <div
+          class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-50 to-white ring-1 ring-brand-100">
+
+          <img
+            id="sidebarLogo"
+            src="{% static 'images/logo.png' %}"
+            alt="Vanuatu Logo"
+            class="h-auto w-12 transition-all duration-300"
+          >
+        </div>
+
+        <div id="sidebarTitle" class="min-w-0">
+          <div class="truncate text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+            Recovery Projects
+          </div>
+
+          <div class="truncate text-xl font-black tracking-tight text-brand-700">
+            Dashboard
+          </div>
+        </div>
+
+        <!-- Mobile close button -->
+        <button
+          id="mobileSidebarClose"
+          type="button"
+          class="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 lg:hidden"
+          aria-label="Close sidebar">
+
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Sidebar navigation -->
+      <div
+        id="sidebarInner"
+        class="flex-1 overflow-y-auto px-4 py-5">
+
+        <div class="sidebar-section-title mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+          Dashboard
+        </div>
+
+        <nav class="space-y-1.5">
+
+          <!-- Map -->
+          <a
+            href="{% url 'location' %}"
+            title="Map"
+            class="nav-link flex items-center rounded-xl px-4 py-2.5 text-sm font-semibold
+            {% if request.resolver_match.url_name == 'location' %}
+              nav-link-active
+            {% else %}
+              text-slate-600 hover:bg-slate-100 hover:text-slate-950
+            {% endif %}">
+
+            <img
+              src="{% static 'images/map.png' %}"
+              class="nav-icon mr-3 h-5 w-5 shrink-0 object-contain"
+              alt=""
+            >
+
+            <span class="nav-label">MAP</span>
+          </a>
+
+          <!-- Summary -->
+          <a
+            href="{% url 'overview' %}"
+            title="Summary"
+            class="nav-link flex items-center rounded-xl px-4 py-2.5 text-sm font-semibold
+            {% if request.resolver_match.url_name == 'overview' %}
+              nav-link-active
+            {% else %}
+              text-slate-600 hover:bg-slate-100 hover:text-slate-950
+            {% endif %}">
+
+            <img
+              src="{% static 'images/overview.png' %}"
+              class="nav-icon mr-3 h-5 w-5 shrink-0 object-contain"
+              alt=""
+            >
+
+            <span class="nav-label">SUMMARY</span>
+          </a>
+
+          <!-- Projects -->
+          <a
+            href="{% url 'projects' %}"
+            title="Projects"
+            class="nav-link flex items-center rounded-xl px-4 py-2.5 text-sm font-semibold
+            {% if request.resolver_match.url_name == 'projects' %}
+              nav-link-active
+            {% else %}
+              text-slate-600 hover:bg-slate-100 hover:text-slate-950
+            {% endif %}">
+
+            <img
+              src="{% static 'images/projects.png' %}"
+              class="nav-icon mr-3 h-5 w-5 shrink-0 object-contain"
+              alt=""
+            >
+
+            <span class="nav-label">PROJECTS</span>
+          </a>
+
+          <!-- Timeline -->
+          <a
+            href="{% url 'timeline' %}"
+            title="Timeline"
+            class="nav-link flex items-center rounded-xl px-4 py-2.5 text-sm font-semibold
+            {% if request.resolver_match.url_name == 'timeline' %}
+              nav-link-active
+            {% else %}
+              text-slate-600 hover:bg-slate-100 hover:text-slate-950
+            {% endif %}">
+
+            <img
+              src="{% static 'images/timeline.png' %}"
+              class="nav-icon mr-3 h-5 w-5 shrink-0 object-contain"
+              alt=""
+            >
+
+            <span class="nav-label">TIMELINE</span>
+          </a>
+        </nav>
+
+        <!-- Reports -->
+        <div class="my-5 border-t border-slate-200/80"></div>
+
+        <div class="sidebar-section-title mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+          Reports
+        </div>
+
+        <nav class="space-y-1.5">
+          <a
+            href="{% url 'reports' %}"
+            title="Six-Monthly Reports"
+            class="nav-link flex items-center rounded-xl px-4 py-2.5 text-sm font-semibold
+            {% if request.resolver_match.url_name == 'reports' %}
+              nav-link-active
+            {% else %}
+              text-slate-600 hover:bg-slate-100 hover:text-slate-950
+            {% endif %}">
+
+            <img
+              src="{% static 'images/reports.png' %}"
+              class="nav-icon mr-3 h-5 w-5 shrink-0 object-contain"
+              alt=""
+            >
+
+            <span class="nav-label">6 MONTHLY REPORTS</span>
+          </a>
+        </nav>
+
+        {% if user.is_authenticated %}
+          <!-- Data management -->
+          <div class="my-5 border-t border-slate-200/80"></div>
+
+          <div class="sidebar-section-title mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+            Data Management
+          </div>
+
+          <nav class="space-y-1.5">
+
+            <a
+              href="{% url 'data-update' %}"
+              title="Data Update"
+              class="nav-link flex items-center rounded-xl px-4 py-2.5 text-sm font-semibold
+              {% if request.resolver_match.url_name == 'data-update' %}
+                nav-link-active
+              {% else %}
+                text-slate-600 hover:bg-slate-100 hover:text-slate-950
+              {% endif %}">
+
+              <img
+                src="{% static 'images/data-update.png' %}"
+                class="nav-icon mr-3 h-5 w-5 shrink-0 object-contain"
+                alt=""
+              >
+
+              <span class="nav-label">DATA UPDATE</span>
+            </a>
+
+            <a
+              href="{% url 'data-entry' %}"
+              title="Data Entry"
+              class="nav-link flex items-center rounded-xl px-4 py-2.5 text-sm font-semibold
+              {% if request.resolver_match.url_name == 'data-entry' %}
+                nav-link-active
+              {% else %}
+                text-slate-600 hover:bg-slate-100 hover:text-slate-950
+              {% endif %}">
+
+              <img
+                src="{% static 'images/data-entry.png' %}"
+                class="nav-icon mr-3 h-5 w-5 shrink-0 object-contain"
+                alt=""
+              >
+
+              <span class="nav-label">DATA ENTRY</span>
+            </a>
+          </nav>
+        {% endif %}
+
+        {% if user.is_authenticated and user.is_superuser %}
+          <!-- Administration -->
+          <div class="my-5 border-t border-slate-200/80"></div>
+
+          <div class="sidebar-section-title mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+            Administration
+          </div>
+
+          <nav class="space-y-1.5">
+
+            <a
+              href="{% url 'users_list' %}"
+              title="All Users"
+              class="nav-link flex items-center rounded-xl px-4 py-2.5 text-sm font-semibold
+              {% if request.resolver_match.url_name == 'users_list' %}
+                nav-link-active
+              {% else %}
+                text-slate-600 hover:bg-slate-100 hover:text-slate-950
+              {% endif %}">
+
+              <img
+                src="{% static 'images/users.png' %}"
+                class="nav-icon mr-3 h-5 w-5 shrink-0 object-contain"
+                alt=""
+              >
+
+              <span class="nav-label">ALL USERS</span>
+            </a>
+
+            <!-- Add these back when required -->
+
+            <!--
+            <a
+              href="{% url 'approvals' %}"
+              title="Approve Expenditures"
+              class="nav-link flex items-center rounded-xl px-4 py-2.5 text-sm font-semibold
+              {% if request.resolver_match.url_name == 'approvals' %}
+                nav-link-active
+              {% else %}
+                text-slate-600 hover:bg-slate-100 hover:text-slate-950
+              {% endif %}">
+
+              <span class="nav-icon mr-3 flex h-5 w-5 items-center justify-center">
+                ✅
+              </span>
+
+              <span class="nav-label">APPROVE EXPENDITURES</span>
+            </a>
+            -->
+
+          </nav>
+        {% endif %}
+
+        <div id="uploadedReportsWrap" class="mt-6">
+          {% block uploaded_reports %}{% endblock %}
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- =====================================================
+         MAIN CONTENT AREA
+    ====================================================== -->
+    <main class="min-w-0">
+
+      <!-- Top navigation bar -->
+      <header
+        class="sticky top-0 z-[9990] border-b border-slate-200/70 bg-white/85 backdrop-blur-xl">
+
+        <div class="flex min-h-[72px] items-center gap-3 px-4 sm:px-6 lg:px-8">
+
+          <!-- Sidebar button -->
+          <button
+            id="sidebarToggle"
+            type="button"
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
+            aria-label="Collapse sidebar"
+            title="Collapse sidebar">
+
+            <svg
+              id="sidebarToggleIcon"
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2.25">
+
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M15 19l-7-7 7-7">
+              </path>
+            </svg>
+          </button>
+
+          <!-- Page title area -->
+          <div class="hidden min-w-0 sm:block">
+            <div class="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+              Recovery Projects System
+            </div>
+
+            <div class="truncate text-sm font-bold text-slate-700">
+              {% block header_title %}Project Monitoring Dashboard{% endblock %}
+            </div>
+          </div>
+
+          <!-- Right controls -->
+          <div class="ml-auto flex items-center gap-2 sm:gap-3">
+
+            {% if user.is_authenticated %}
+
+              <!-- Notification bell -->
+              <div class="relative">
+
+                <button
+                  id="notificationBell"
+                  type="button"
+                  class="relative flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
+                  aria-label="Notifications"
+                  aria-expanded="false"
+                  title="Notifications">
+
+                  <i class="fa-regular fa-bell text-[17px]"></i>
+
+                  {% if notification_count > 0 %}
+                    <span
+                      id="notificationCount"
+                      class="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 text-[10px] font-black text-white shadow-sm">
+
+                      {% if notification_count > 99 %}
+                        99+
+                      {% else %}
+                        {{ notification_count }}
+                      {% endif %}
+                    </span>
+                  {% endif %}
+                </button>
+
+                <!-- Notification dropdown -->
+                <div
+                  id="notificationDropdown"
+                  class="absolute right-0 mt-3 hidden w-[calc(100vw-2rem)] max-w-[380px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-dropdown sm:w-[380px]">
+
+                  <!-- Dropdown header -->
+                  <div
+                    class="flex items-start justify-between gap-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-5 py-4">
+
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <span class="text-sm font-black text-slate-900">
+                          Notifications
+                        </span>
+
+                        {% if notification_count > 0 %}
+                          <span
+                            class="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600 ring-1 ring-red-100">
+                            {{ notification_count }} new
+                          </span>
+                        {% endif %}
+                      </div>
+
+                      <div class="mt-1 text-xs text-slate-500">
+                        {% if notification_count > 0 %}
+                          You have pending items that require attention.
+                        {% else %}
+                          There are no new notifications.
+                        {% endif %}
+                      </div>
+                    </div>
+
+                    <button
+                      id="notificationClose"
+                      type="button"
+                      class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                      aria-label="Close notifications">
+
+                      <i class="fa-solid fa-xmark text-sm"></i>
+                    </button>
+                  </div>
+
+                  <!-- Notification list -->
+                  <div class="max-h-[390px] overflow-y-auto">
+
+                    {% if notifications %}
+                      {% for note in notifications %}
+                        <a
+                          href="{% url note.url_name %}"
+                          class="group block border-b border-slate-100 px-5 py-4 transition last:border-b-0 hover:bg-brand-50/60">
+
+                          <div class="flex items-start gap-3">
+
+                            <div
+                              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-lg transition group-hover:bg-white group-hover:shadow-sm">
+                              {{ note.icon }}
+                            </div>
+
+                            <div class="min-w-0 flex-1">
+                              <div
+                                class="truncate text-sm font-bold text-slate-800 group-hover:text-brand-700">
+                                {{ note.title }}
+                              </div>
+
+                              <div class="mt-1 text-xs leading-5 text-slate-500">
+                                {{ note.message }}
+                              </div>
+                            </div>
+
+                            <div
+                              class="flex h-7 min-w-7 shrink-0 items-center justify-center rounded-full bg-red-50 px-2 text-xs font-black text-red-600 ring-1 ring-red-100">
+                              {{ note.count }}
+                            </div>
+                          </div>
+                        </a>
+                      {% endfor %}
+
+                    {% else %}
+                      <div class="px-5 py-12 text-center">
+
+                        <div
+                          class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-xl text-slate-400">
+                          <i class="fa-regular fa-bell-slash"></i>
+                        </div>
+
+                        <div class="mt-4 text-sm font-bold text-slate-700">
+                          No notifications
+                        </div>
+
+                        <div class="mt-1 text-xs text-slate-500">
+                          You are all caught up.
+                        </div>
+                      </div>
+                    {% endif %}
+                  </div>
+
+                  {% if notification_count > 0 %}
+                    <div
+                      class="border-t border-slate-100 bg-slate-50 px-5 py-3 text-center text-[11px] font-medium text-slate-500">
+
+                      Select a notification to view the related page
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- User profile -->
+              <div class="hidden items-center gap-3 rounded-xl border border-slate-200 bg-white py-1.5 pl-1.5 pr-3 shadow-sm sm:flex">
+
+                <div
+                  class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand-600 to-brand-500 text-xs font-black uppercase text-white shadow-sm">
+
+                  {% if user.first_name %}
+                    {{ user.first_name|first }}
+                  {% else %}
+                    {{ user.username|first }}
+                  {% endif %}
+                </div>
+
+                <div class="max-w-[150px] min-w-0">
+                  <div class="truncate text-xs font-bold text-slate-800">
+                    {% if user.get_full_name %}
+                      {{ user.get_full_name }}
+                    {% else %}
+                      {{ user.username }}
+                    {% endif %}
+                  </div>
+
+                  <div class="truncate text-[10px] font-medium text-slate-400">
+                    {% if user.is_superuser %}
+                      Administrator
+                    {% else %}
+                      System User
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Mobile user avatar -->
+              <div
+                class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-brand-600 to-brand-500 text-xs font-black uppercase text-white shadow-sm sm:hidden"
+                title="{{ user.username }}">
+
+                {% if user.first_name %}
+                  {{ user.first_name|first }}
+                {% else %}
+                  {{ user.username|first }}
+                {% endif %}
+              </div>
+
+              <!-- Logout -->
+              <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+
+                <button
+                  type="submit"
+                  class="flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 shadow-sm transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 sm:px-4"
+                  title="Log out">
+
+                  <i class="fa-solid fa-arrow-right-from-bracket"></i>
+
+                  <span class="hidden lg:inline">
+                    LOG OUT
+                  </span>
+                </button>
+              </form>
+
+            {% else %}
+
+              <!-- Login -->
+              <a
+                href="{% url 'login' %}"
+                class="flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-700 to-brand-500 px-4 text-xs font-bold text-white shadow-lg shadow-brand-700/20 transition hover:-translate-y-0.5 hover:shadow-xl">
+
+                <i class="fa-solid fa-arrow-right-to-bracket"></i>
+
+                <span>LOG IN</span>
+              </a>
+
+            {% endif %}
+          </div>
+        </div>
+      </header>
+
+      <!-- Django messages -->
+      {% if messages %}
+        <div class="px-4 pt-5 sm:px-6 lg:px-8">
+          <div class="space-y-3">
+            {% for message in messages %}
+              <div
+                class="flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm shadow-sm
+                {% if message.tags == 'success' %}
+                  border-emerald-200 bg-emerald-50 text-emerald-800
+                {% elif message.tags == 'error' %}
+                  border-red-200 bg-red-50 text-red-800
+                {% elif message.tags == 'warning' %}
+                  border-amber-200 bg-amber-50 text-amber-800
+                {% else %}
+                  border-blue-200 bg-blue-50 text-blue-800
+                {% endif %}">
+
+                <div class="mt-0.5 shrink-0">
+                  {% if message.tags == 'success' %}
+                    <i class="fa-solid fa-circle-check"></i>
+                  {% elif message.tags == 'error' %}
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                  {% elif message.tags == 'warning' %}
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                  {% else %}
+                    <i class="fa-solid fa-circle-info"></i>
+                  {% endif %}
+                </div>
+
+                <div class="flex-1">
+                  {{ message }}
+                </div>
+
+                <button
+                  type="button"
+                  class="message-close shrink-0 opacity-60 transition hover:opacity-100"
+                  aria-label="Close message">
+
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- Page content -->
+      <div class="px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+        
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
+
+  <!-- =====================================================
+       SIDEBAR SCRIPT
+  ====================================================== -->
+  <script>
+    (function () {
+      const body = document.body;
+      const appShell = document.getElementById("appShell");
+      const sidebarToggle = document.getElementById("sidebarToggle");
+      const sidebarToggleIcon = document.getElementById("sidebarToggleIcon");
+      const mobileOverlay = document.getElementById("mobileOverlay");
+      const mobileSidebarClose = document.getElementById("mobileSidebarClose");
+
+      const STORAGE_KEY = "sidebarCollapsed";
+      const desktopBreakpoint = 1024;
+
+      function isDesktop() {
+        return window.innerWidth >= desktopBreakpoint;
+      }
+
+      function updateDesktopSidebar(collapsed, saveState = true) {
+        body.classList.toggle("sidebar-collapsed", collapsed);
+
+        if (isDesktop()) {
+          appShell.style.gridTemplateColumns = collapsed
+            ? "88px minmax(0, 1fr)"
+            : "260px minmax(0, 1fr)";
+        }
+
+        if (collapsed) {
+          sidebarToggle.setAttribute("aria-label", "Expand sidebar");
+          sidebarToggle.setAttribute("title", "Expand sidebar");
+
+          sidebarToggleIcon.innerHTML = `
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M9 5l7 7-7 7">
+            </path>
+          `;
+        } else {
+          sidebarToggle.setAttribute("aria-label", "Collapse sidebar");
+          sidebarToggle.setAttribute("title", "Collapse sidebar");
+
+          sidebarToggleIcon.innerHTML = `
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M15 19l-7-7 7-7">
+            </path>
+          `;
+        }
+
+        if (saveState) {
+          localStorage.setItem(
+            STORAGE_KEY,
+            collapsed ? "1" : "0"
+          );
+        }
+      }
+
+      function openMobileSidebar() {
+        body.classList.add("mobile-sidebar-open");
+        body.style.overflow = "hidden";
+      }
+
+      function closeMobileSidebar() {
+        body.classList.remove("mobile-sidebar-open");
+        body.style.overflow = "";
+      }
+
+      function handleSidebarToggle() {
+        if (!isDesktop()) {
+          if (body.classList.contains("mobile-sidebar-open")) {
+            closeMobileSidebar();
+          } else {
+            openMobileSidebar();
+          }
+
+          return;
+        }
+
+        const currentlyCollapsed =
+          body.classList.contains("sidebar-collapsed");
+
+        updateDesktopSidebar(!currentlyCollapsed);
+      }
+
+      function handleResize() {
+        if (isDesktop()) {
+          closeMobileSidebar();
+
+          const savedCollapsed =
+            localStorage.getItem(STORAGE_KEY) === "1";
+
+          updateDesktopSidebar(savedCollapsed, false);
+        } else {
+          appShell.style.gridTemplateColumns = "";
+        }
+      }
+
+      const savedCollapsed =
+        localStorage.getItem(STORAGE_KEY) === "1";
+
+      updateDesktopSidebar(savedCollapsed, false);
+
+      sidebarToggle.addEventListener(
+        "click",
+        handleSidebarToggle
+      );
+
+      mobileOverlay.addEventListener(
+        "click",
+        closeMobileSidebar
+      );
+
+      mobileSidebarClose.addEventListener(
+        "click",
+        closeMobileSidebar
+      );
+
+      window.addEventListener(
+        "resize",
+        handleResize
+      );
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+          closeMobileSidebar();
+        }
+      });
+    })();
+  </script>
+
+  <!-- =====================================================
+       NOTIFICATION SCRIPT
+  ====================================================== -->
+  <script>
+    (function () {
+      const bell = document.getElementById("notificationBell");
+      const dropdown = document.getElementById("notificationDropdown");
+      const closeButton = document.getElementById("notificationClose");
+
+      if (!bell || !dropdown) {
+        return;
+      }
+
+      function openDropdown() {
+        dropdown.classList.remove("hidden");
+        bell.setAttribute("aria-expanded", "true");
+      }
+
+      function closeDropdown() {
+        dropdown.classList.add("hidden");
+        bell.setAttribute("aria-expanded", "false");
+      }
+
+      function toggleDropdown() {
+        const isHidden = dropdown.classList.contains("hidden");
+
+        if (isHidden) {
+          openDropdown();
+        } else {
+          closeDropdown();
+        }
+      }
+
+      bell.addEventListener("click", function (event) {
+        event.stopPropagation();
+        toggleDropdown();
+      });
+
+      if (closeButton) {
+        closeButton.addEventListener("click", function (event) {
+          event.stopPropagation();
+          closeDropdown();
+        });
+      }
+
+      dropdown.addEventListener("click", function (event) {
+        event.stopPropagation();
+      });
+
+      document.addEventListener("click", closeDropdown);
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+          closeDropdown();
+        }
+      });
+    })();
+  </script>
+
+  <!-- Dismiss Django messages -->
+  <script>
+    document.querySelectorAll(".message-close").forEach(function (button) {
+      button.addEventListener("click", function () {
+        const message = button.parentElement;
+
+        message.style.transition =
+          "opacity 180ms ease, transform 180ms ease";
+
+        message.style.opacity = "0";
+        message.style.transform = "translateY(-4px)";
+
+        window.setTimeout(function () {
+          message.remove();
+        }, 180);
+      });
+    });
+  </script>
+
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

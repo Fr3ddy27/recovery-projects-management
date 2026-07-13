@@ -1,0 +1,104 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+
+<div class="px-4 py-4 md:px-6">
+
+  <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+
+    <div class="mb-4 flex items-center justify-between gap-3">
+      <div>
+        <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          Rejected attachments
+        </div>
+        <div class="mt-1 text-xs text-slate-500">
+          These 6 monthly report attachments were rejected by admin.
+        </div>
+      </div>
+
+      <a
+        href="{% url 'approvals' %}"
+        class="rounded-md bg-slate-100 px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-200 transition-colors">
+        Back to Approvals
+      </a>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-xs text-slate-700">
+        <thead>
+          <tr class="bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <th class="px-3 py-3 text-left">Project ID</th>
+            <th class="px-3 py-3 text-left">Status Indicator</th>
+            <th class="px-3 py-3 text-left">Description</th>
+            <th class="px-3 py-3 text-left">Attachment</th>
+            <th class="px-3 py-3 text-left">Admin Comment</th>
+            <th class="px-3 py-3 text-left">Rejected Date</th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-slate-200">
+          {% for indicator in indicators %}
+            <tr class="hover:bg-slate-50 transition-colors">
+
+              <td class="px-3 py-3 font-medium whitespace-nowrap">
+                {{ indicator.project_id|default:"-" }}
+              </td>
+
+              <td class="px-3 py-3 whitespace-nowrap">
+                {{ indicator.status_indicator|default:"-" }}
+              </td>
+
+              <td class="px-3 py-3 max-w-md">
+                {{ indicator.description|default:"-" }}
+              </td>
+
+              <td class="px-3 py-3 whitespace-nowrap">
+                {% if indicator.attachment %}
+                  <a
+                    href="{{ indicator.attachment.url }}"
+                    target="_blank"
+                    class="font-medium text-blue-700 hover:underline">
+                    View attachment
+                  </a>
+                {% else %}
+                  <span class="text-slate-400">-</span>
+                {% endif %}
+              </td>
+
+              <td class="px-3 py-3 max-w-md">
+                {% if indicator.disapproved_comment %}
+                  <div class="rounded-md bg-red-50 px-3 py-2 text-red-700">
+                    {{ indicator.disapproved_comment }}
+                  </div>
+                {% else %}
+                  <span class="text-slate-400">No comment provided.</span>
+                {% endif %}
+              </td>
+
+              <td class="px-3 py-3 whitespace-nowrap">
+                {% if indicator.created_at %}
+                  {{ indicator.created_at|date:"d M Y, h:i A" }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6" class="px-3 py-8 text-center text-slate-500">
+                No rejected attachments found.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}

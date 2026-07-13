@@ -1,0 +1,111 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+
+<div class="px-4 py-4 md:px-6">
+
+  <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+
+    <div class="mb-4 flex items-center justify-between gap-3">
+      <div>
+        <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          Rejected expenditure updates
+        </div>
+        <div class="mt-1 text-xs text-slate-500">
+          These expenditure changes were rejected by admin.
+        </div>
+      </div>
+
+      <a
+        href="{% url 'approvals' %}"
+        class="rounded-md bg-slate-100 px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-200 transition-colors">
+        Back to Approvals
+      </a>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-xs text-slate-700">
+        <thead>
+          <tr class="bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <th class="px-3 py-3 text-left">Project Title</th>
+            <th class="px-3 py-3 text-left">GIP</th>
+            <th class="px-3 py-3 text-left">Old Expenditure</th>
+            <th class="px-3 py-3 text-left">Requested Expenditure</th>
+            <th class="px-3 py-3 text-left">Admin Comment</th>
+            <th class="px-3 py-3 text-left">Rejected Date</th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-slate-200">
+          {% for item in items %}
+            <tr class="hover:bg-slate-50 transition-colors">
+
+              <td class="px-3 py-3 font-medium max-w-xs truncate">
+                {% if item.project %}
+                  {{ item.project.project_title|default:"-" }}
+                {% else %}
+                  Project not found
+                {% endif %}
+              </td>
+
+              <td class="px-3 py-3 whitespace-nowrap">
+                {% if item.project %}
+                  {{ item.project.gip|default:"-" }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+
+              <td class="px-3 py-3 whitespace-nowrap text-slate-500">
+                {% if item.request.old_expenditure %}
+                  {{ item.request.old_expenditure|floatformat:0|intcomma }}vt
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+
+              <td class="px-3 py-3 whitespace-nowrap font-semibold text-red-700">
+                {% if item.request.new_expenditure %}
+                  {{ item.request.new_expenditure|floatformat:0|intcomma }}vt
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+
+              <td class="px-3 py-3 max-w-md">
+                {% if item.request.admin_comment %}
+                  <div class="rounded-md bg-red-50 px-3 py-2 text-red-700">
+                    {{ item.request.admin_comment }}
+                  </div>
+                {% else %}
+                  <span class="text-slate-400">No comment provided.</span>
+                {% endif %}
+              </td>
+
+              <td class="px-3 py-3 whitespace-nowrap">
+                {% if item.request.reviewed_at %}
+                  {{ item.request.reviewed_at|date:"d M Y, h:i A" }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6" class="px-3 py-8 text-center text-slate-500">
+                No rejected expenditure updates found.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}
